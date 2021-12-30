@@ -51,7 +51,7 @@ func server() {
 
 		check_error(err)
 
-		if r.Method == "GET" {
+		if r.Method == "POST" {
 			fmt.Println("POST")
 
 			wt, err := repo.Worktree()
