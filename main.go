@@ -17,26 +17,24 @@ func check_error(err error) {
 	}
 }
 
-
-
 func server(url string) {
-	fmt.Println(os.Args[2])
+
 	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, %q", r.URL.Path)	
 		
 		auth:=git_http.BasicAuth{
-			Username: os.Args[2],
-			Password: os.Args[3],
+			Username: os.Getenv("GIT_USERNAME"),
+			Password: os.Getenv("GIT_PASSWORD"),
 		}
 		
 		parsedUrl := strings.Split(url, "/")
 		path := fmt.Sprintf("../%s", parsedUrl[4])
-		
+		parsedPath := strings.Split(path, ".git")[0]
 		fmt.Println(auth)
 
 		// Clone the given repository to the given directory
 
-		repo, err := git.PlainClone(strings.Split(path, ".git")[0], false , &git.CloneOptions{ 
+		repo, err := git.PlainClone(parsedPath, false , &git.CloneOptions{ 
 			URL: url,
 			Progress: os.Stdout,
 			Auth: &auth,
@@ -51,7 +49,7 @@ func server(url string) {
 			check_error(err)
 			
 			wt.Pull(&git.PullOptions{
-				RemoteName: "main",
+				RemoteName: os.Getenv("GIT_REMOTE"),
 				Progress: os.Stdout,
 			})
 		
@@ -60,6 +58,7 @@ func server(url string) {
 			fmt.Println("Restarting Docker containers")
 
 			cmd := exec.Command("docker-compose", "restart")
+			cmd.Dir = parsedPath
 			stdout, err := cmd.Output()
 
 			check_error(err)
@@ -76,5 +75,5 @@ func server(url string) {
 func main() {
 	fmt.Println("Starting")
 
-	server(os.Args[1])
+	server(os.Getenv("GIT_URL"))
 }
