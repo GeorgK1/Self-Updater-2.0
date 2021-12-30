@@ -35,7 +35,7 @@ func server(url string) {
 		// Clone the given repository to the given directory
 
 		repo, err := git.PlainClone(parsedPath, false , &git.CloneOptions{ 
-			URL: url,
+			URL: strings.TrimSpace(url),
 			Progress: os.Stdout,
 			Auth: &auth,
 		})
