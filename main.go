@@ -49,7 +49,9 @@ func server() {
 			Auth:     &auth,
 		})
 
-		check_error(err)
+		if(err != nil){
+			fmt.Println("Repository already copied")
+		}
 
 		if r.Method == "POST" {
 			fmt.Println("POST")
