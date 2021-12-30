@@ -73,7 +73,7 @@ func server(url string) {
 }
 
 func main() {
-	fmt.Println("Starting")
+	fmt.Println("Starting on localhost:8080")
 
 	server(os.Getenv("GIT_URL"))
 }
