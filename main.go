@@ -56,10 +56,6 @@ func server() {
 		if r.Method == "POST" {
 			fmt.Println("POST")
 
-			
-			
-			check_error(err)
-
 			repo.Fetch(&git.FetchOptions{
 				RemoteName: viper.GetString("GIT_REMOTE"),
 				Progress:   os.Stdout,
