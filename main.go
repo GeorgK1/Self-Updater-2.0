@@ -56,16 +56,16 @@ func server() {
 		if r.Method == "POST" {
 			fmt.Println("POST")
 
-			wt, err := repo.Worktree()
-
+			
+			
 			check_error(err)
 
-			wt.Pull(&git.PullOptions{
+			repo.Fetch(&git.FetchOptions{
 				RemoteName: viper.GetString("GIT_REMOTE"),
 				Progress:   os.Stdout,
 			})
 
-			fmt.Println("Pulled")
+			fmt.Println("Fetched")
 
 			fmt.Println("Restarting Docker containers")
 
