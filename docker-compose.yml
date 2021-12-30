@@ -7,5 +7,5 @@ services:
             - '8080:8080'
         volumes:
             - .:/app
-        command: bash -c 'cd /app && ./main.go'
+        command: bash -c './main.go'
 
