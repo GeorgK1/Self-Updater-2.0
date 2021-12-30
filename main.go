@@ -19,7 +19,7 @@ func check_error(err error) {
 
 func server(url string) {
 
-	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, %q", r.URL.Path)	
 		
 		auth:=git_http.BasicAuth{
