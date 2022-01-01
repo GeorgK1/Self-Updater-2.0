@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	//"os/exec"
 	"strings"
 
 	"github.com/go-git/go-billy/v5"
@@ -26,43 +25,44 @@ func check_error(err error) {
 
 }
 
-func readFilesToLocalFileSystem(dir []os.FileInfo, parsedPath string, fs billy.Filesystem, ran bool, foldername string) {
-	 
+func readFilesToLocalFileSystem(dir []os.FileInfo, absolutePath string, fs billy.Filesystem, relativePath string) {
+	fmt.Println("Absolute path: ", absolutePath)
+	fmt.Println("Relative path: ", relativePath)
+
 	for _, file := range dir {
-		
+
 		if file.IsDir() {
+			fmt.Println("Directory: ", file.Name())
 			//read a new directory using directory name'
-			fmt.Println("Found a div")
 			folderName := file.Name()
-			fmt.Println(folderName)
-			newpath := fmt.Sprintf("%s/%s", parsedPath, folderName)
-			
+
+			folderPath := fmt.Sprintf("%s/%s", absolutePath, folderName)
+			err := os.Mkdir(folderPath, 0755)
+
+			check_error(err)
+
+
 			newfolder, err := fs.ReadDir(folderName)
-			fmt.Println(newpath)
+
 			check_error(err)
-			
-			os.Mkdir(newpath, 0755)
-			
-			check_error(err)
-			readFilesToLocalFileSystem(newfolder, newpath, fs, true, folderName)
+
+			readFilesToLocalFileSystem(newfolder, folderPath, fs, relativePath+folderName+"/")
 		} else {
+			fmt.Println("File: ", file.Name())
+			fmt.Println("Absolute path: ", absolutePath)
+			fmt.Println("Relative path: ", relativePath)
 			//create a new destination using the folder name and file name
-			dst, err := os.Create(fmt.Sprintf("%s/%s", parsedPath, file.Name()))
-			fmt.Printf("%s/%s", parsedPath, file.Name()+ "\n")
+
+			filePath := fmt.Sprintf("%s/%s", absolutePath, file.Name())
+
+			dst, err := os.Create(filePath)
+
 			check_error(err)
-			
-			
-			if(ran) {
-				f, err := fs.Open(fmt.Sprintf("%s/%s", foldername, file.Name()))
-				check_error(err)
-				io.Copy(dst, f)
-			} else {
-				f, err := fs.Open(file.Name())
-				check_error(err)
-				io.Copy(dst, f)
-			}
-			
-			
+
+			f, err := fs.Open(fmt.Sprintf("%s/%s", relativePath, file.Name()))
+
+			check_error(err)
+			io.Copy(dst, f)
 		}
 
 	}
@@ -107,6 +107,8 @@ func server() {
 		if r.Method == "POST" {
 			fmt.Println("POST")
 
+			
+
 			mr.Fetch(&git.FetchOptions{
 				RemoteName: viper.GetString("GIT_REMOTE"),
 				Progress:   os.Stdout,
@@ -116,7 +118,7 @@ func server() {
 
 			//assemble files from the in memory filesystem and put them to the local filesystem
 			//temppath := "./"
-			readFilesToLocalFileSystem(dir, parsedPath, fs, false, "./")
+			readFilesToLocalFileSystem(dir, parsedPath, fs, "./")
 
 			fmt.Println("Fetched")
 

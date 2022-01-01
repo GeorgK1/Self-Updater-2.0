@@ -1,2 +1,9 @@
+
+# secrets
 .env
+
+# production
 main.exe
+.vscode
+
+
