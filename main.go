@@ -1,18 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"os/exec"
-	"path/filepath"
+	"github.com/go-git/go-git/v5"
+	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/spf13/viper"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
-	"github.com/go-git/go-git/v5"
-	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/spf13/viper"
 )
 
-func check_error(err error) {
+func checkError(err error) {
 
 	if err != nil {
 		panic(err)
@@ -21,20 +22,30 @@ func check_error(err error) {
 }
 
 func runCommand(command string, argument string, path string) {
-	cmd := exec.Command(command, argument)
+	args := strings.Split(argument, " ")
+
+	cmd := exec.Command(command, args...)
 	cmd.Dir = path
 
-	stdout, err := cmd.Output()
+	stdout, err := cmd.StdoutPipe()
+	checkError(err)
+	err = cmd.Start()
+	checkError(err)
+	scanner := bufio.NewScanner(stdout)
 
-	os.WriteFile("logs.txt", stdout, 0755)
-
-	check_error(err)
+	for scanner.Scan() {
+		t := scanner.Text()
+		fmt.Println(t)
+	}
 }
 
-func server(url string, auth *git_http.BasicAuth, parsedPath string) {
+func server(parsedPath string) {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", r.URL.Path)
+		_, err := fmt.Fprintf(w, "Hello, %q", r.URL.Path)
+		if err != nil {
+			return
+		}
 
 		if r.Method == "POST" {
 			fmt.Println("POST")
@@ -48,7 +59,10 @@ func server(url string, auth *git_http.BasicAuth, parsedPath string) {
 		}
 	})
 
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return
+	}
 }
 
 func main() {
@@ -56,9 +70,9 @@ func main() {
 	viper.SetConfigFile(".env")
 	err := viper.ReadInConfig()
 
-	check_error(err)
+	checkError(err)
 
-	auth := git_http.BasicAuth{
+	auth := githttp.BasicAuth{
 		Username: viper.GetString("GIT_USERNAME"),
 		Password: viper.GetString("GIT_PASSWORD"),
 	}
@@ -70,17 +84,16 @@ func main() {
 
 	parsedPath := strings.Split(path, ".git")[0]
 
-	mr, err := git.PlainClone(parsedPath, false, &git.CloneOptions{
+	_, err = git.PlainClone(parsedPath, false, &git.CloneOptions{
 		URL:      strings.TrimSpace(url),
 		Progress: os.Stdout,
 		Auth:     &auth,
 	})
-	fmt.Println(mr)
 
 	if err != nil {
 		fmt.Println("Repository already copied")
 
 	}
 
-	server(url, &auth, parsedPath)
+	server(parsedPath)
 }
